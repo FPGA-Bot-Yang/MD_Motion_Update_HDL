@@ -44,9 +44,9 @@ module particle_bin_top(
 	global_particle_data_out								// Output, particle data send to neighbor bins
 );
 
-	parameter BIN_ID_X = 0;
-	parameter BIN_ID_Y = 0;
-	parameter BIN_ID_Z = 0;
+	parameter BIN_ID_X = 1;
+	parameter BIN_ID_Y = 1;
+	parameter BIN_ID_Z = 1;
 	parameter BIN_ADDR_WIDTH = 4;
 	parameter DATA_WIDTH = 32*5;
 	parameter ADDR_WIDTH = 7;
@@ -94,9 +94,22 @@ module particle_bin_top(
 	reg [NUM_NEIGHBOR_BIN-1:0] reg_global_incom_particle_data_valid;
 	
 	// Signals for arbitration
-	wire [NUM_NEIGHBOR_BIN-1:0] arbitor;
+	wire [NUM_NEIGHBOR_BIN-1:0] arbiter;
 	// Find the least significant 1 bit of the data valid flag
 	assign arbiter = ((~reg_global_incom_particle_data_valid) + 1'b1) & reg_global_incom_particle_data_valid;
+	/*
+	always@(*)
+		begin
+		if(~rst_n)
+			arbiter <= 0;
+		else
+			arbiter <= ((~reg_global_incom_particle_data_valid) + 1'b1) & reg_global_incom_particle_data_valid;
+		end
+	*/
+	
+	// Create dummy all 0 wires for concatenation use
+	wire [DATA_WIDTH-1:0] dummy_all_0_particle_data;
+	assign dummy_all_0_particle_data = 0;
 	
 	// Signals for determine outgoing particle destination
 	// X_POS: 0
@@ -122,26 +135,27 @@ module particle_bin_top(
 				if (particle_data_dest_bin_x > BIN_ID_X)
 					outgoing_port <= 0;
 				// X_NEG
-				else if(particle_data_dest_bin_x < BIN_ID_X)
+				else
 					outgoing_port <= 3;
 				end
 			// Y direction
-			else if(particle_data_dest_bin_x != BIN_ID_X)
+			else if(particle_data_dest_bin_y != BIN_ID_Y)
 				begin
 				// Y_POS
 				if (particle_data_dest_bin_y > BIN_ID_Y)
 					outgoing_port <= 1;
 				// Y_NEG
-				else if(particle_data_dest_bin_y < BIN_ID_Y)
+				else
 					outgoing_port <= 4;
 				end
+			// Z direction
 			else
 				begin
 				// Z_POS
 				if (particle_data_dest_bin_z > BIN_ID_Z)
 					outgoing_port <= 2;
 				// Z_NEG
-				else if(particle_data_dest_bin_z < BIN_ID_Z)
+				else
 					outgoing_port <= 5;
 				end
 			end
@@ -207,42 +221,42 @@ module particle_bin_top(
 					// assign the data to particle bin
 					case(arbiter)
 						1: begin
-							incom_particle_data_in <= reg_incoming_particle_data[31:0];
+							incom_particle_data_in <= reg_incoming_particle_data[DATA_WIDTH*1-1:DATA_WIDTH*0];
 							incom_particle_data_valid <= 1'b1;
 							reg_global_incom_particle_data_valid <= reg_global_incom_particle_data_valid & (~arbiter);
 							end
 						2: begin
-							incom_particle_data_in <= reg_incoming_particle_data[32*2-1:32*1];
+							incom_particle_data_in <= reg_incoming_particle_data[DATA_WIDTH*2-1:DATA_WIDTH*1];
 							incom_particle_data_valid <= 1'b1;
 							reg_global_incom_particle_data_valid <= reg_global_incom_particle_data_valid & (~arbiter);
 							end
 						4: begin
-							incom_particle_data_in <= reg_incoming_particle_data[32*3-1:32*2];
+							incom_particle_data_in <= reg_incoming_particle_data[DATA_WIDTH*3-1:DATA_WIDTH*2];
 							incom_particle_data_valid <= 1'b1;
 							reg_global_incom_particle_data_valid <= reg_global_incom_particle_data_valid & (~arbiter);
 							end
 						8: begin
-							incom_particle_data_in <= reg_incoming_particle_data[32*4-1:32*3];
+							incom_particle_data_in <= reg_incoming_particle_data[DATA_WIDTH*4-1:DATA_WIDTH*3];
 							incom_particle_data_valid <= 1'b1;
 							reg_global_incom_particle_data_valid <= reg_global_incom_particle_data_valid & (~arbiter);
 							end
 						16: begin
-							incom_particle_data_in <= reg_incoming_particle_data[32*5-1:32*4];
+							incom_particle_data_in <= reg_incoming_particle_data[DATA_WIDTH*5-1:DATA_WIDTH*4];
 							incom_particle_data_valid <= 1'b1;
 							reg_global_incom_particle_data_valid <= reg_global_incom_particle_data_valid & (~arbiter);
 							end
 						32: begin
-							incom_particle_data_in <= reg_incoming_particle_data[32*6-1:32*5];
+							incom_particle_data_in <= reg_incoming_particle_data[DATA_WIDTH*6-1:DATA_WIDTH*5];
 							incom_particle_data_valid <= 1'b1;
 							reg_global_incom_particle_data_valid <= reg_global_incom_particle_data_valid & (~arbiter);
 							end
 						64: begin
-							incom_particle_data_in <= reg_incoming_particle_data[32*7-1:32*6];
+							incom_particle_data_in <= reg_incoming_particle_data[DATA_WIDTH*7-1:DATA_WIDTH*6];
 							incom_particle_data_valid <= 1'b1;
 							reg_global_incom_particle_data_valid <= reg_global_incom_particle_data_valid & (~arbiter);
 							end
 						128: begin
-							incom_particle_data_in <= reg_incoming_particle_data[32*8-1:32*7];
+							incom_particle_data_in <= reg_incoming_particle_data[DATA_WIDTH*8-1:DATA_WIDTH*7];
 							incom_particle_data_valid <= 1'b1;
 							reg_global_incom_particle_data_valid <= reg_global_incom_particle_data_valid & (~arbiter);
 							end
@@ -290,7 +304,7 @@ module particle_bin_top(
 		begin
 		if(~rst_n)
 			begin
-			global_outgoing_particle_data_valid <= 1'b0;
+			global_outgoing_particle_data_valid <= 0;
 			global_particle_data_out <= 0;
 			particle_output_available <= 1'b0;
 			end
@@ -302,32 +316,32 @@ module particle_bin_top(
 				begin
 				case(outgoing_port)
 					0: begin
-						global_particle_data_out <= {32'd0, 32'd0, 32'd0, 32'd0, 32'd0, particle_data_out};
+						global_particle_data_out <= {dummy_all_0_particle_data, dummy_all_0_particle_data, dummy_all_0_particle_data, dummy_all_0_particle_data, dummy_all_0_particle_data, particle_data_out};
 						global_outgoing_particle_data_valid <= 1;
 						particle_output_available <= particle_output_availalbe_from_neighbors[0];
 						end
 					1: begin
-						global_particle_data_out <= {32'd0, 32'd0, 32'd0, 32'd0, particle_data_out, 32'd0};
+						global_particle_data_out <= {dummy_all_0_particle_data, dummy_all_0_particle_data, dummy_all_0_particle_data, dummy_all_0_particle_data, particle_data_out, dummy_all_0_particle_data};
 						global_outgoing_particle_data_valid <= 2;
 						particle_output_available <= particle_output_availalbe_from_neighbors[1];
 						end
 					2: begin
-						global_particle_data_out <= {32'd0, 32'd0, 32'd0, particle_data_out, 32'd0, 32'd0};
+						global_particle_data_out <= {dummy_all_0_particle_data, dummy_all_0_particle_data, dummy_all_0_particle_data, particle_data_out, dummy_all_0_particle_data, dummy_all_0_particle_data};
 						global_outgoing_particle_data_valid <= 4;
 						particle_output_available <= particle_output_availalbe_from_neighbors[2];
 						end
 					3: begin
-						global_particle_data_out <= {32'd0, 32'd0, particle_data_out, 32'd0, 32'd0, 32'd0};
+						global_particle_data_out <= {dummy_all_0_particle_data, dummy_all_0_particle_data, particle_data_out, dummy_all_0_particle_data, dummy_all_0_particle_data, dummy_all_0_particle_data};
 						global_outgoing_particle_data_valid <= 8;
 						particle_output_available <= particle_output_availalbe_from_neighbors[3];
 						end
 					4: begin
-						global_particle_data_out <= {32'd0, particle_data_out, 32'd0, 32'd0, 32'd0, 32'd0};
+						global_particle_data_out <= {dummy_all_0_particle_data, particle_data_out, dummy_all_0_particle_data, dummy_all_0_particle_data, dummy_all_0_particle_data, dummy_all_0_particle_data};
 						global_outgoing_particle_data_valid <= 16;
-						particle_output_available <= particle_output_availalbe_from_neighbors[5];
+						particle_output_available <= particle_output_availalbe_from_neighbors[4];
 						end
 					5: begin
-						global_particle_data_out <= {particle_data_out, 32'd0, 32'd0, 32'd0, 32'd0, 32'd0};
+						global_particle_data_out <= {particle_data_out, dummy_all_0_particle_data, dummy_all_0_particle_data, dummy_all_0_particle_data, dummy_all_0_particle_data, dummy_all_0_particle_data};
 						global_outgoing_particle_data_valid <= 32;
 						particle_output_available <= particle_output_availalbe_from_neighbors[5];
 						end
@@ -341,7 +355,7 @@ module particle_bin_top(
 			// Output nothing when particle bin has nothing to send out
 			else
 				begin
-				global_outgoing_particle_data_valid <= 1'b0;
+				global_outgoing_particle_data_valid <= 0;
 				global_particle_data_out <= 0;
 				particle_output_available <= 1'b0;
 				end
@@ -349,7 +363,7 @@ module particle_bin_top(
 		// If not in motion update process, then don't send out data
 		else
 			begin
-			global_outgoing_particle_data_valid <= 1'b0;
+			global_outgoing_particle_data_valid <= 0;
 			global_particle_data_out <= 0;
 			particle_output_available <= 1'b1;
 			end
