@@ -37,7 +37,7 @@ module particle_bin_top(
 	local_motion_update_done,								// Output, When the motion update of all the local particles are done, set this flag, when all the bins finished, then the motion update process is finished
 	// Ports connected to all the neighboring bins
 	particle_input_available_to_neighbors,				// Output, to all the neighboring bins, let neighbor bins know if the current bin is ready to take particles
-	particle_output_availalbe_from_neighbors,			// Input, from all neighboring bins, only send out data to that bin if the flag is high
+	particle_output_available_from_neighbors,			// Input, from all neighboring bins, only send out data to that bin if the flag is high
 	global_incom_particle_data_valid,					// Input, incoming particle valid signal from all neighbor bins
 	global_incom_particle_data_in,						// Input, incoming particle data from all neighbor bin
 	global_outgoing_particle_data_valid,				// Output, particle valid flag to neighbor bins
@@ -65,7 +65,7 @@ module particle_bin_top(
 	input motion_update_enable;																	// Flag set as high when all the local particles are done processed for motion update. When detect the falling edge, signifies the end of the motion update process
 	output local_motion_update_done;											
 	output reg particle_input_available_to_neighbors;
-	input [NUM_NEIGHBOR_BIN-1:0] particle_output_availalbe_from_neighbors;
+	input [NUM_NEIGHBOR_BIN-1:0] particle_output_available_from_neighbors;
 	input [NUM_NEIGHBOR_BIN-1:0] global_incom_particle_data_valid;
 	input [NUM_NEIGHBOR_BIN*DATA_WIDTH-1:0] global_incom_particle_data_in;
 	output reg [NUM_NEIGHBOR_BIN-1:0] global_outgoing_particle_data_valid;
@@ -318,32 +318,32 @@ module particle_bin_top(
 					0: begin
 						global_particle_data_out <= {dummy_all_0_particle_data, dummy_all_0_particle_data, dummy_all_0_particle_data, dummy_all_0_particle_data, dummy_all_0_particle_data, particle_data_out};
 						global_outgoing_particle_data_valid <= 1;
-						particle_output_available <= particle_output_availalbe_from_neighbors[0];
+						particle_output_available <= particle_output_available_from_neighbors[0];
 						end
 					1: begin
 						global_particle_data_out <= {dummy_all_0_particle_data, dummy_all_0_particle_data, dummy_all_0_particle_data, dummy_all_0_particle_data, particle_data_out, dummy_all_0_particle_data};
 						global_outgoing_particle_data_valid <= 2;
-						particle_output_available <= particle_output_availalbe_from_neighbors[1];
+						particle_output_available <= particle_output_available_from_neighbors[1];
 						end
 					2: begin
 						global_particle_data_out <= {dummy_all_0_particle_data, dummy_all_0_particle_data, dummy_all_0_particle_data, particle_data_out, dummy_all_0_particle_data, dummy_all_0_particle_data};
 						global_outgoing_particle_data_valid <= 4;
-						particle_output_available <= particle_output_availalbe_from_neighbors[2];
+						particle_output_available <= particle_output_available_from_neighbors[2];
 						end
 					3: begin
 						global_particle_data_out <= {dummy_all_0_particle_data, dummy_all_0_particle_data, particle_data_out, dummy_all_0_particle_data, dummy_all_0_particle_data, dummy_all_0_particle_data};
 						global_outgoing_particle_data_valid <= 8;
-						particle_output_available <= particle_output_availalbe_from_neighbors[3];
+						particle_output_available <= particle_output_available_from_neighbors[3];
 						end
 					4: begin
 						global_particle_data_out <= {dummy_all_0_particle_data, particle_data_out, dummy_all_0_particle_data, dummy_all_0_particle_data, dummy_all_0_particle_data, dummy_all_0_particle_data};
 						global_outgoing_particle_data_valid <= 16;
-						particle_output_available <= particle_output_availalbe_from_neighbors[4];
+						particle_output_available <= particle_output_available_from_neighbors[4];
 						end
 					5: begin
 						global_particle_data_out <= {particle_data_out, dummy_all_0_particle_data, dummy_all_0_particle_data, dummy_all_0_particle_data, dummy_all_0_particle_data, dummy_all_0_particle_data};
 						global_outgoing_particle_data_valid <= 32;
-						particle_output_available <= particle_output_availalbe_from_neighbors[5];
+						particle_output_available <= particle_output_available_from_neighbors[5];
 						end
 					default: begin
 						global_particle_data_out <= 0;
